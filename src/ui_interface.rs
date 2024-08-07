@@ -207,7 +207,7 @@ pub fn get_hard_option(key: String) -> String {
 
 #[inline]
 pub fn get_builtin_option(key: &str) -> String {
-    config::BUILTIN_SETTINGS
+    config::BUILDIN_SETTINGS
         .read()
         .unwrap()
         .get(key)
