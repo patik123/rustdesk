@@ -53,8 +53,11 @@ lazy_static::lazy_static! {
     static ref CONFIG2: RwLock<Config2> = RwLock::new(Config2::load());
     static ref LOCAL_CONFIG: RwLock<LocalConfig> = RwLock::new(LocalConfig::load());
     static ref ONLINE: Mutex<HashMap<String, i64>> = Default::default();
-    pub static ref PROD_RENDEZVOUS_SERVER: RwLock<String> = RwLock::new("helpdesk.bass.si".to_owned());
-    pub static ref EXE_RENDEZVOUS_SERVER: RwLock<String> = RwLock::new("helpdesk.bass.si".to_owned());
+    pub static ref PROD_RENDEZVOUS_SERVER: RwLock<String> = RwLock::new(match option_env!("RENDEZVOUS_SERVER") {
+        Some(key) if !key.is_empty() => key,
+        _ => "",
+    }.to_owned());
+    pub static ref EXE_RENDEZVOUS_SERVER: RwLock<String> = Default::default();
     pub static ref APP_NAME: RwLock<String> = RwLock::new("RustDesk".to_owned());
     static ref KEY_PAIR: Mutex<Option<KeyPair>> = Default::default();
     static ref USER_DEFAULT_CONFIG: RwLock<(UserDefaultConfig, Instant)> = RwLock::new((UserDefaultConfig::load(), Instant::now()));
@@ -96,8 +99,12 @@ const CHARS: &[char] = &[
 ];
 
 pub const RENDEZVOUS_SERVERS: &[&str] = &["helpdesk.bass.si"];
-pub const PUBLIC_RS_PUB_KEY: &str = "OeVuKk5nlHiXp+APNn0Y3pC1Iwpwn44JGqrQCsWqmBw=";
-pub const RS_PUB_KEY: &str = "bowEvrLIQZOl90oFXsstPPZCJaSHYsz2pf1Vy3rDnFw=";
+pub const PUBLIC_RS_PUB_KEY: &str = "bowEvrLIQZOl90oFXsstPPZCJaSHYsz2pf1Vy3rDnFw=";
+
+pub const RS_PUB_KEY: &str = match option_env!("RS_PUB_KEY") {
+    Some(key) if !key.is_empty() => key,
+    _ => PUBLIC_RS_PUB_KEY,
+};
 
 pub const RENDEZVOUS_PORT: i32 = 21116;
 pub const RELAY_PORT: i32 = 21117;
