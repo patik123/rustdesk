@@ -53,11 +53,8 @@ lazy_static::lazy_static! {
     static ref CONFIG2: RwLock<Config2> = RwLock::new(Config2::load());
     static ref LOCAL_CONFIG: RwLock<LocalConfig> = RwLock::new(LocalConfig::load());
     static ref ONLINE: Mutex<HashMap<String, i64>> = Default::default();
-    pub static ref PROD_RENDEZVOUS_SERVER: RwLock<String> = RwLock::new(match option_env!("RENDEZVOUS_SERVER") {
-        Some(key) if !key.is_empty() => key,
-        _ => "",
-    }.to_owned());
-    pub static ref EXE_RENDEZVOUS_SERVER: RwLock<String> = Default::default();
+    pub static ref PROD_RENDEZVOUS_SERVER: RwLock<String> = RwLock::new("helpdesk.bass.si".to_owned());
+    pub static ref EXE_RENDEZVOUS_SERVER: RwLock<String> = RwLock::new("helpdesk.bass.si".to_owned());
     pub static ref APP_NAME: RwLock<String> = RwLock::new("RustDesk".to_owned());
     static ref KEY_PAIR: Mutex<Option<KeyPair>> = Default::default();
     static ref USER_DEFAULT_CONFIG: RwLock<(UserDefaultConfig, Instant)> = RwLock::new((UserDefaultConfig::load(), Instant::now()));
@@ -69,7 +66,7 @@ lazy_static::lazy_static! {
     pub static ref DEFAULT_LOCAL_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
     pub static ref OVERWRITE_LOCAL_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
     pub static ref HARD_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
-    pub static ref BUILTIN_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
+    pub static ref BUILDIN_SETTINGS: RwLock<HashMap<String, String>> = Default::default();
 }
 
 lazy_static::lazy_static! {
@@ -98,13 +95,9 @@ const CHARS: &[char] = &[
     'm', 'n', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
 ];
 
-pub const RENDEZVOUS_SERVERS: &[&str] = &["rs-ny.rustdesk.com"];
+pub const RENDEZVOUS_SERVERS: &[&str] = &["helpdesk.bass.si"];
 pub const PUBLIC_RS_PUB_KEY: &str = "OeVuKk5nlHiXp+APNn0Y3pC1Iwpwn44JGqrQCsWqmBw=";
-
-pub const RS_PUB_KEY: &str = match option_env!("RS_PUB_KEY") {
-    Some(key) if !key.is_empty() => key,
-    _ => PUBLIC_RS_PUB_KEY,
-};
+pub const RS_PUB_KEY: &str = "bowEvrLIQZOl90oFXsstPPZCJaSHYsz2pf1Vy3rDnFw=";
 
 pub const RENDEZVOUS_PORT: i32 = 21116;
 pub const RELAY_PORT: i32 = 21117;
@@ -2114,7 +2107,6 @@ pub mod keys {
     pub const OPTION_HIDE_USERNAME_ON_CARD: &str = "hide-username-on-card";
     pub const OPTION_HIDE_HELP_CARDS: &str = "hide-help-cards";
     pub const OPTION_DEFAULT_CONNECT_PASSWORD: &str = "default-connect-password";
-    pub const OPTION_HIDE_TRAY: &str = "hide-tray";
 
     // flutter local options
     pub const OPTION_FLUTTER_REMOTE_MENUBAR_STATE: &str = "remoteMenubarState";
@@ -2257,7 +2249,6 @@ pub mod keys {
         OPTION_HIDE_USERNAME_ON_CARD,
         OPTION_HIDE_HELP_CARDS,
         OPTION_DEFAULT_CONNECT_PASSWORD,
-        OPTION_HIDE_TRAY,
     ];
 }
 
