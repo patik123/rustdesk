@@ -182,13 +182,6 @@ jobs:
           name: rustdesk-unsigned-windows-${{ matrix.job.arch }}
           path: rustdesk
 
-    #  - name: Sign rustdesk files
-    #W    if: env.UPLOAD_ARTIFACT == 'true' && env.SIGN_BASE_URL != ''
-    #    shell: bash
-      #  run: |
-      #    pip3 install requests argparse
-      #    BASE_URL=${{ secrets.SIGN_BASE_URL }} SECRET_KEY=${{ secrets.SIGN_SECRET_KEY }} python3 res/job.py sign_files ./rustdesk/
-
       - name: Podpis s sign toolom
         if: env.SIGN == 'true'
         uses: skymatic/code-sign-action@v1
@@ -227,12 +220,6 @@ jobs:
           mv ./Package/bin/x64/Release/en-us/Package.msi ../../SignOutput/rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.msi
           sha256sum ../../SignOutput/rustdesk-*.msi
 
-    #  - name: Sign rustdesk self-extracted file
-     #   if: env.UPLOAD_ARTIFACT == 'true' && env.SIGN_BASE_URL != ''
-      #  shell: bash
-       # run: |
-        #  BASE_URL=${{ secrets.SIGN_BASE_URL }} SECRET_KEY=${{ secrets.SIGN_SECRET_KEY }} python3 res/job.py sign_files ./SignOutput
-      
       - name: Podpis s sign toolom
         if: env.SIGN == 'true'
         uses: skymatic/code-sign-action@v1
@@ -364,12 +351,24 @@ jobs:
             ls -l ./libs/portable/Runner.res;
           fi
 
-      - name: Sign rustdesk files
-        if: env.UPLOAD_ARTIFACT == 'true' && env.SIGN_BASE_URL != ''
-        shell: bash
-        run: |
-          pip3 install requests argparse
-          BASE_URL=${{ secrets.SIGN_BASE_URL }} SECRET_KEY=${{ secrets.SIGN_SECRET_KEY }} python3 res/job.py sign_files ./Release/
+    #  - name: Sign rustdesk files
+      #  if: env.UPLOAD_ARTIFACT == 'true' && env.SIGN_BASE_URL != ''
+      #  shell: bash
+     #   run: |
+      #    pip3 install requests argparse
+      #    BASE_URL=${{ secrets.SIGN_BASE_URL }} SECRET_KEY=${{ secrets.SIGN_SECRET_KEY }} python3 res/job.py sign_files ./Release/
+      - name: Podpis s sign toolom
+        if: env.SIGN == 'true'
+        uses: skymatic/code-sign-action@v1
+        with:
+          certificate: '${{ secrets.CERTIFICATE }}'
+          password: '${{ secrets.PASSWORD }}'
+          certificatesha1: '${{ secrets.CERTHASH }}'
+          certificatename: '${{ secrets.CERTNAME }}'
+          description: 'Build Bass'
+          timestampUrl: 'http://timestamp.digicert.com'
+          folder: './Release/'
+          recursive: true
 
       - name: Build self-extracted executable
         shell: bash
