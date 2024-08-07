@@ -44,6 +44,7 @@ env:
   API_SERVER: "${{ secrets.API_SERVER }}"
   UPLOAD_ARTIFACT: "${{ inputs.upload-artifact }}"
   SIGN_BASE_URL: "${{ secrets.SIGN_BASE_URL }}"
+  SIGN: true
 
 jobs:
   build-RustDeskTempTopMostWindow:
@@ -188,6 +189,19 @@ jobs:
           pip3 install requests argparse
           BASE_URL=${{ secrets.SIGN_BASE_URL }} SECRET_KEY=${{ secrets.SIGN_SECRET_KEY }} python3 res/job.py sign_files ./rustdesk/
 
+      - name: Podpis s sign toolom
+        if: env.SIGN == 'true'
+        uses: skymatic/code-sign-action@v1
+        with:
+          certificate: '${{ secrets.CERTIFICATE }}'
+          password: '${{ secrets.PASSWORD }}'
+          certificatesha1: '${{ secrets.CERTHASH }}'
+          certificatename: '${{ secrets.CERTNAME }}'
+          description: 'Build Bass'
+          timestampUrl: 'http://timestamp.digicert.com'
+          folder: './rustdesk/'
+          recursive: true
+
       - name: Build self-extracted executable
         shell: bash
         if: env.UPLOAD_ARTIFACT == 'true'
@@ -213,11 +227,24 @@ jobs:
           mv ./Package/bin/x64/Release/en-us/Package.msi ../../SignOutput/rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.msi
           sha256sum ../../SignOutput/rustdesk-*.msi
 
-      - name: Sign rustdesk self-extracted file
-        if: env.UPLOAD_ARTIFACT == 'true' && env.SIGN_BASE_URL != ''
-        shell: bash
-        run: |
-          BASE_URL=${{ secrets.SIGN_BASE_URL }} SECRET_KEY=${{ secrets.SIGN_SECRET_KEY }} python3 res/job.py sign_files ./SignOutput
+    #  - name: Sign rustdesk self-extracted file
+     #   if: env.UPLOAD_ARTIFACT == 'true' && env.SIGN_BASE_URL != ''
+      #  shell: bash
+       # run: |
+        #  BASE_URL=${{ secrets.SIGN_BASE_URL }} SECRET_KEY=${{ secrets.SIGN_SECRET_KEY }} python3 res/job.py sign_files ./SignOutput
+      
+      - name: Podpis s sign toolom
+        if: env.SIGN == 'true'
+        uses: skymatic/code-sign-action@v1
+        with:
+          certificate: '${{ secrets.CERTIFICATE }}'
+          password: '${{ secrets.PASSWORD }}'
+          certificatesha1: '${{ secrets.CERTHASH }}'
+          certificatename: '${{ secrets.CERTNAME }}'
+          description: 'Build Bass'
+          timestampUrl: 'http://timestamp.digicert.com'
+          folder: './SignOutput'
+          recursive: true
 
       - name: Publish Release
         uses: softprops/action-gh-release@v1
@@ -355,11 +382,23 @@ jobs:
           mkdir -p ./SignOutput
           mv ./target/release/rustdesk-portable-packer.exe ./SignOutput/rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}-sciter.exe
 
-      - name: Sign rustdesk self-extracted file
-        if: env.UPLOAD_ARTIFACT == 'true' && env.SIGN_BASE_URL != ''
-        shell: bash
-        run: |
-          BASE_URL=${{ secrets.SIGN_BASE_URL }} SECRET_KEY=${{ secrets.SIGN_SECRET_KEY }} python3 res/job.py sign_files ./SignOutput/
+   #   - name: Sign rustdesk self-extracted file
+     #   if: env.UPLOAD_ARTIFACT == 'true' && env.SIGN_BASE_URL != ''
+   #     shell: bash
+     #   run: |
+     #     BASE_URL=${{ secrets.SIGN_BASE_URL }} SECRET_KEY=${{ secrets.SIGN_SECRET_KEY }} python3 res/job.py sign_files ./SignOutput/
+      - name: Podpis s sign toolom
+        if: env.SIGN == 'true'
+        uses: skymatic/code-sign-action@v1
+        with:
+          certificate: '${{ secrets.CERTIFICATE }}'
+          password: '${{ secrets.PASSWORD }}'
+          certificatesha1: '${{ secrets.CERTHASH }}'
+          certificatename: '${{ secrets.CERTNAME }}'
+          description: 'Build Bass'
+          timestampUrl: 'http://timestamp.digicert.com'
+          folder: './SignOutput'
+          recursive: true
 
       - name: Publish Release
         uses: softprops/action-gh-release@v1
@@ -1149,66 +1188,3 @@ jobs:
           tag_name: ${{ env.TAG_NAME }}
           files: |
             signed-apk/rustdesk-${{ env.VERSION }}-universal${{ env.suffix }}.apk
-
-  build-rustdesk-web:
-    name: build-rustdesk-web
-    runs-on: ubuntu-20.04
-    strategy:
-      fail-fast: false
-    env:
-      RELEASE_NAME: web-basic
-    steps:
-      - name: Checkout source code
-        uses: actions/checkout@v4
-
-      - name: Prepare env
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y wget npm
-
-      - name: Install flutter
-        uses: subosito/flutter-action@v2.12.0 #https://github.com/subosito/flutter-action/issues/277
-        with:
-          channel: "stable"
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
-
-      # https://rustdesk.com/docs/en/dev/build/web/
-      - name: Build web
-        shell: bash
-        run: |
-          pushd flutter/web/js
-          npm install yarn -g
-          npm install typescript -g
-          npm install protoc -g
-          # Install protoc first, see: https://google.github.io/proto-lens/installing-protoc.html
-          npm install ts-proto
-          # Only works with vite <= 2.8, see: https://github.com/vitejs/vite/blob/main/docs/guide/build.md#chunking-strategy
-          npm install vite@2.8
-          yarn install && yarn build
-          popd
-
-          pushd flutter/web
-          wget https://github.com/rustdesk/doc.rustdesk.com/releases/download/console/web_deps.tar.gz
-          tar xzf web_deps.tar.gz
-          popd
-
-          pushd flutter
-          flutter build web --release
-          cd build
-          cp ../web/README.md web
-          # TODO: Remove the following line when the web is almost complete.
-          echo -e "\n\nThis build is for preview and not full functionality." >> web/README.md
-          dir_name="rustdesk-${{ env.VERSION }}-${{ env.RELEASE_NAME }}"
-          mv web "${dir_name}" && tar czf "${dir_name}".tar.gz "${dir_name}"
-          sha256sum "${dir_name}".tar.gz
-          popd
-
-      - name: Publish web
-        if: env.UPLOAD_ARTIFACT == 'true'
-        uses: softprops/action-gh-release@v1
-        with:
-          prerelease: true
-          tag_name: ${{ env.TAG_NAME }}
-          files: |
-            flutter/build/rustdesk-${{ env.VERSION }}-${{ env.RELEASE_NAME }}.tar.gz
