@@ -1,0 +1,24 @@
+name: Bass build RustRemote
+
+on:
+  workflow_dispatch:
+    inputs: 
+        tag:
+            description: Verzija gradnje
+            required: false
+            type: string
+            default: dev
+        prelease:
+            description: Neuradna izdaja
+            required: true
+            type: boolean
+            default: true
+
+jobs:
+  run-flutter-nightly-build:
+    uses: ./.github/workflows/flutter-build.yml
+    secrets: inherit
+    with:
+      upload-artifact: true
+      upload-tag: ${{ inputs.tag }}
+      prelease: ${{ inputs.prelease }}
