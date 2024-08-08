@@ -78,29 +78,29 @@ jobs:
               vcpkg-triplet: x64-windows-static,
             }
     steps:
-      - name: Izvoz GitHub Actions cache env variabel
+      - name: ♻️Izvoz GitHub Actions cache env variabel
         uses: actions/github-script@v6
         with:
           script: |
             core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
             core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
 
-      - name: Checkout izvorne kode
+      - name: ⬇️Checkout izvorne kode
         uses: actions/checkout@v4
 
-      - name: Install LLVM and Clang
+      - name: 🚧Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v1
         with:
           version: ${{ env.LLVM_VERSION }}
 
-      - name: Namestitev flutter
+      - name: 🚧Namestitev flutter
         uses: subosito/flutter-action@v2.12.0 #https://github.com/subosito/flutter-action/issues/277
         with:
           channel: "stable"
           flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
 
-      - name: Namestitev Rust toolchain
+      - name: 🚧Namestitev Rust toolchain
         uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: ${{ env.SCITER_RUST_VERSION }}
@@ -111,21 +111,21 @@ jobs:
         with:
           prefix-key: ${{ matrix.job.os }}
 
-      - name: Namestitev flutter rust bridge deps
+      - name: 🚧Namestitev flutter rust bridge deps
         run: |
           git config --global core.longpaths true
           cargo install flutter_rust_bridge_codegen --version ${{ env.FLUTTER_RUST_BRIDGE_VERSION }} --features "uuid"
           Push-Location flutter ; flutter pub get ; Pop-Location
           ~/.cargo/bin/flutter_rust_bridge_codegen --rust-input ./src/flutter_ffi.rs --dart-output ./flutter/lib/generated_bridge.dart
 
-      - name: Namestitev vcpkg iz Github Actions binary cache
+      - name: 🚧Namestitev vcpkg iz Github Actions binary cache
         uses: lukka/run-vcpkg@v11
         with:
           vcpkgDirectory: C:\vcpkg
           vcpkgGitCommitId: ${{ env.VCPKG_COMMIT_ID }}
           doNotCache: false
 
-      - name: Namestitev vcpkg odvisnosti
+      - name: 🚧Namestitev vcpkg odvisnosti
         env:
           VCPKG_DEFAULT_HOST_TRIPLET: ${{ matrix.job.vcpkg-triplet }}
         run: |
@@ -144,7 +144,7 @@ jobs:
           fi
         shell: bash
 
-      - name: Gradnja projekta rustdesk
+      - name: 🏗️Gradnja projekta rustdesk
         run: |
           Invoke-WebRequest -Uri https://github.com/rustdesk-org/rdev/releases/download/usbmmidd_v2/usbmmidd_v2.zip -OutFile usbmmidd_v2.zip
           Expand-Archive usbmmidd_v2.zip -DestinationPath .
@@ -154,7 +154,7 @@ jobs:
           mv ./flutter/build/windows/x64/runner/Release ./rustdesk
           mv -Force .\usbmmidd_v2 ./rustdesk
 
-      - name: find Runner.res
+      - name: 🚧find Runner.res
         # Windows: find Runner.res (compiled from ./flutter/windows/runner/Runner.rc), copy to ./Runner.res
         # Runner.rc does not contain actual version, but Runner.res does
         continue-on-error: true
@@ -170,21 +170,21 @@ jobs:
             ls -l ./libs/portable/Runner.res;
           fi
 
-      - name: Prenos RustDeskTempTopMostWindow artifakta
+      - name: 🌐Prenos RustDeskTempTopMostWindow artifakta
         uses: actions/download-artifact@master
         if: ${{ inputs.upload-artifact }}
         with:
           name: topmostwindow-artifacts
           path: "./rustdesk"
 
-      - name: Nalaganje nepodpisanega programa
+      - name: 🚀Nalaganje nepodpisanega programa
         if: env.UPLOAD_ARTIFACT == 'true'
         uses: actions/upload-artifact@master
         with:
           name: rustdesk-unsigned-windows-${{ matrix.job.arch }}
           path: rustdesk
 
-      - name: Podpis programa s sign toolom
+      - name: 📝Podpis programa s sign toolom
         if: env.SIGN == 'true'
         uses: skymatic/code-sign-action@v1
         with:
@@ -196,7 +196,7 @@ jobs:
           folder: './rustdesk/'
           recursive: true
 
-      - name: Gradnja exe programa
+      - name: 🏗️Gradnja exe programa
         shell: bash
         if: env.UPLOAD_ARTIFACT == 'true'
         run: |
@@ -208,10 +208,10 @@ jobs:
           mkdir -p ./SignOutput
           mv ./target/release/rustdesk-portable-packer.exe ./SignOutput/rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.exe
 
-      - name: Dodajanje MSBuild v PATH
+      - name: 🏗️Dodajanje MSBuild v PATH
         uses: microsoft/setup-msbuild@v2
 
-      - name: Gradnja msi fajla
+      - name: 🏗️Gradnja msi datoteke
         if: env.UPLOAD_ARTIFACT == 'true'
         run: |
           pushd ./res/msi
@@ -221,7 +221,7 @@ jobs:
           mv ./Package/bin/x64/Release/en-us/Package.msi ../../SignOutput/rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.msi
           sha256sum ../../SignOutput/rustdesk-*.msi
 
-      - name: Podpis s sign toolom
+      - name: 📝Podpis s sign toolom
         if: env.SIGN == 'true'
         uses: skymatic/code-sign-action@v1
         with:
@@ -233,7 +233,7 @@ jobs:
           folder: './SignOutput'
           recursive: true
 
-      - name: Izdaja verzije
+      - name: 🎉Izdaja verzije
         uses: softprops/action-gh-release@v1
         if: env.UPLOAD_ARTIFACT == 'true'
         with:
@@ -243,117 +243,13 @@ jobs:
             ./SignOutput/rustdesk-*.msi
             ./SignOutput/rustdesk-*.exe
 
-  build-rustdesk-ios:
-    if: ${{ inputs.upload-artifact }}
-    name: build rustdesk ios ipa
-    runs-on: ${{ matrix.job.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        job:
-          - {
-              arch: aarch64,
-              target: aarch64-apple-ios,
-              os: macos-13,
-              vcpkg-triplet: arm64-ios,
-            }
-    steps:
-      - name: Export GitHub Actions cache environment variables
-        uses: actions/github-script@v6
-        with:
-          script: |
-            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
-            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
-
-      - name: Install dependencies
-        run: |
-          brew install nasm yasm
-      - name: Checkout source code
-        uses: actions/checkout@v4
-      - name: Install flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: "stable"
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-
-      - name: Setup vcpkg with Github Actions binary cache
-        uses: lukka/run-vcpkg@v11
-        with:
-          vcpkgGitCommitId: ${{ env.VCPKG_COMMIT_ID }}
-          doNotCache: false
-
-      - name: Install vcpkg dependencies
-        run: |
-          if ! $VCPKG_ROOT/vcpkg \
-            install \
-            --triplet ${{ matrix.job.vcpkg-triplet }} \
-            --x-install-root="$VCPKG_ROOT/installed"; then
-            find "${VCPKG_ROOT}/" -name "*.log" | while read -r _1; do
-              echo "$_1:"
-              echo "======"
-              cat "$_1"
-              echo "======"
-              echo ""
-            done
-            exit 1
-          fi
-        shell: bash
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@v1
-        with:
-          toolchain: ${{ env.RUST_VERSION }}
-          targets: ${{ matrix.job.target }}
-          components: "rustfmt"
-
-      - uses: Swatinem/rust-cache@v2
-        with:
-          prefix-key: rustdesk-lib-cache-ios
-          key: ${{ matrix.job.target }}
-
-      - name: Install flutter rust bridge deps
-        shell: bash
-        run: |
-          cargo install flutter_rust_bridge_codegen --version ${{ env.FLUTTER_RUST_BRIDGE_VERSION }} --features "uuid"
-          pushd flutter && flutter pub get && popd
-          ~/.cargo/bin/flutter_rust_bridge_codegen --rust-input ./src/flutter_ffi.rs --dart-output ./flutter/lib/generated_bridge.dart --c-output ./flutter/ios/Runner/bridge_generated.h
-
-      - name: Build rustdesk lib
-        run: |
-          rustup target add ${{ matrix.job.target }}
-          cargo build --features flutter,hwcodec --release --target aarch64-apple-ios --lib
-
-      - name: Build rustdesk
-        shell: bash
-        run: |
-          pushd flutter
-          # flutter build ipa --release --obfuscate --split-debug-info=./split-debug-info --no-codesign
-          # for easy debugging
-          flutter build ipa --release --no-codesign
-
-      # - name: Upload Artifacts
-      #   # if: env.ANDROID_SIGNING_KEY != null && env.UPLOAD_ARTIFACT == 'true'
-      #   uses: actions/upload-artifact@master
-      #   with:
-      #     name: rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.apk
-      #     path: flutter/build/ios/ipa/*.ipa
-
-      # - name: Publish ipa package
-      #   # if: env.ANDROID_SIGNING_KEY != null && env.UPLOAD_ARTIFACT == 'true'
-      #   uses: softprops/action-gh-release@v1
-      #   with:
-      #     prerelease: true
-      #     tag_name: ${{ env.TAG_NAME }}
-      #     files: |
-      #       flutter/build/ios/ipa/*.ipa
-
   publish_unsigned:
     needs:
       - build-for-windows-flutter
     runs-on: ubuntu-latest
     if: ${{ inputs.upload-artifact }}
     steps:
-      - name: Download Artifacts
+      - name: ⬇️Download Artifacts
         uses: actions/download-artifact@master
         with:
           name: rustdesk-unsigned-windows-x86_64
@@ -363,7 +259,7 @@ jobs:
         run: |
           tar czf rustdesk-${{ env.VERSION }}-unsigned.tar.gz windows-x86_64
 
-      - name: Publish unsigned app
+      - name: 📌Publish unsigned app
         uses: softprops/action-gh-release@v1
         with:
           prerelease: ${{inputs.prelease}}
@@ -403,7 +299,7 @@ jobs:
               suffix: "",
             }
     steps:
-      - name: Free Disk Space (Ubuntu)
+      - name: ♻️Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
         with:
           tool-cache: false
@@ -414,7 +310,7 @@ jobs:
           docker-images: true
           swap-storage: false
 
-      - name: Export GitHub Actions cache environment variables
+      - name: ♻️Export GitHub Actions cache environment variables
         uses: actions/github-script@v6
         with:
           script: |
@@ -456,7 +352,7 @@ jobs:
                tree \
                wget
 
-      - name: Checkout source code
+      - name: 🚧Checkout source code
         uses: actions/checkout@v4
       - name: Install flutter
         uses: subosito/flutter-action@v2
@@ -469,14 +365,14 @@ jobs:
           ndk-version: ${{ env.NDK_VERSION }}
           add-to-path: true
 
-      - name: Setup vcpkg with Github Actions binary cache
+      - name: 🚧Setup vcpkg with Github Actions binary cache
         uses: lukka/run-vcpkg@v11
         with:
           vcpkgDirectory: /opt/artifacts/vcpkg
           vcpkgGitCommitId: ${{ env.VCPKG_COMMIT_ID }}
           doNotCache: false
 
-      - name: Install vcpkg dependencies
+      - name: 🚧Install vcpkg dependencies
         run: |
           case ${{ matrix.job.target }} in
             aarch64-linux-android)
@@ -504,13 +400,13 @@ jobs:
           fi
         shell: bash
 
-      - name: Restore bridge files
+      - name: 🚧Restore bridge files
         uses: actions/download-artifact@master
         with:
           name: bridge-artifact
           path: ./
 
-      - name: Install Rust toolchain
+      - name: 🚧Install Rust toolchain
         uses: dtolnay/rust-toolchain@v1
         with:
           toolchain: ${{ env.RUST_VERSION }}
@@ -521,14 +417,14 @@ jobs:
           prefix-key: rustdesk-lib-cache-android # TODO: drop '-android' part after caches are invalidated
           key: ${{ matrix.job.target }}
 
-      - name: fix android for flutter 3.13
+      - name: 🐛fix android for flutter 3.13
         if: $${{ env.ANDROID_FLUTTER_VERSION == '3.13.9' }}
         run: |
           sed -i 's/uni_links_desktop/#uni_links_desktop/g' flutter/pubspec.yaml
           cd flutter/lib
           find . | grep dart | xargs sed -i 's/textScaler: TextScaler.linear(\(.*\)),/textScaleFactor: \1,/g'
 
-      - name: Build rustdesk lib
+      - name: 🚧Build rustdesk lib
         env:
           ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
           ANDROID_NDK_ROOT: ${{ steps.setup-ndk.outputs.ndk-path }}
@@ -558,13 +454,13 @@ jobs:
             ;;
           esac
 
-      - name: Upload Rustdesk library to Artifacts
+      - name: 🚧Upload Rustdesk library to Artifacts
         uses: actions/upload-artifact@master
         with:
           name: librustdesk.so.${{ matrix.job.target }}
           path: ./target/${{ matrix.job.target }}/release/liblibrustdesk.so
 
-      - name: Build rustdesk
+      - name: 🏗️Build rustdesk
         shell: bash
         env:
           JAVA_HOME: /usr/lib/jvm/java-11-openjdk-amd64
@@ -615,7 +511,7 @@ jobs:
           mv ../rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}${{ matrix.job.suffix }}.apk .
 
       - uses: r0adkll/sign-android-release@v1
-        name: Sign app APK
+        name: 📝Sign app APK
         if: env.ANDROID_SIGNING_KEY != null
         id: sign-rustdesk
         with:
@@ -628,14 +524,14 @@ jobs:
           # override default build-tools version (29.0.3) -- optional
           BUILD_TOOLS_VERSION: "30.0.2"
 
-      - name: Upload Artifacts
+      - name: ⬆️Upload Artifacts
         if: env.ANDROID_SIGNING_KEY != null && env.UPLOAD_ARTIFACT == 'true'
         uses: actions/upload-artifact@master
         with:
           name: rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.apk
           path: ${{steps.sign-rustdesk.outputs.signedReleaseFile}}
 
-      - name: Publish signed apk package
+      - name: 🎉Publish signed apk package
         if: env.ANDROID_SIGNING_KEY != null && env.UPLOAD_ARTIFACT == 'true'
         uses: softprops/action-gh-release@v1
         with:
@@ -644,7 +540,7 @@ jobs:
           files: |
             ${{steps.sign-rustdesk.outputs.signedReleaseFile}}
 
-      - name: Publish unsigned apk package
+      - name: 🎉Publish unsigned apk package
         if: env.ANDROID_SIGNING_KEY == null && env.UPLOAD_ARTIFACT == 'true'
         uses: softprops/action-gh-release@v1
         with:
@@ -663,7 +559,7 @@ jobs:
       x86_target: "" # can be ",android-x86"
       suffix: ""
     steps:
-      - name: Free Disk Space (Ubuntu)
+      - name: ♻️Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
         with:
           tool-cache: false
@@ -674,7 +570,7 @@ jobs:
           docker-images: true
           swap-storage: false
 
-      - name: Export GitHub Actions cache environment variables
+      - name: ♻️Export GitHub Actions cache environment variables
         uses: actions/github-script@v6
         with:
           script: |
@@ -716,7 +612,7 @@ jobs:
                tree \
                wget
 
-      - name: Checkout source code
+      - name: ⬇️Checkout source code
         uses: actions/checkout@v4
       - name: Install flutter
         uses: subosito/flutter-action@v2
@@ -724,45 +620,45 @@ jobs:
           channel: "stable"
           flutter-version: ${{ env.ANDROID_FLUTTER_VERSION }}
 
-      - name: Restore bridge files
+      - name: 🚧Restore bridge files
         uses: actions/download-artifact@master
         with:
           name: bridge-artifact
           path: ./
 
-      - name: Download Rustdesk library from Artifacts
+      - name: 🚧Download Rustdesk library from Artifacts
         uses: actions/download-artifact@master
         with:
           name: librustdesk.so.aarch64-linux-android
           path: ./flutter/android/app/src/main/jniLibs/arm64-v8a
 
-      - name: Download Rustdesk library from Artifacts
+      - name: 🚧Download Rustdesk library from Artifacts
         uses: actions/download-artifact@master
         with:
           name: librustdesk.so.armv7-linux-androideabi
           path: ./flutter/android/app/src/main/jniLibs/armeabi-v7a
 
-      - name: Download Rustdesk library from Artifacts
+      - name: 🚧Download Rustdesk library from Artifacts
         uses: actions/download-artifact@master
         with:
           name: librustdesk.so.x86_64-linux-android
           path: ./flutter/android/app/src/main/jniLibs/x86_64
 
-      - name: Download Rustdesk library from Artifacts
+      - name: 🚧Download Rustdesk library from Artifacts
         if: ${{ env.reltype == 'debug' }}
         uses: actions/download-artifact@master
         with:
           name: librustdesk.so.i686-linux-android
           path: ./flutter/android/app/src/main/jniLibs/x86
 
-      - name: fix android for flutter 3.13
+      - name: 🚧fix android for flutter 3.13
         if: $${{ env.ANDROID_FLUTTER_VERSION == '3.13.9' }}
         run: |
           sed -i 's/uni_links_desktop/#uni_links_desktop/g' flutter/pubspec.yaml
           cd flutter/lib
           find . | grep dart | xargs sed -i 's/textScaler: TextScaler.linear(\(.*\)),/textScaleFactor: \1,/g'
 
-      - name: Build rustdesk
+      - name: 🏗️Build rustdesk
         shell: bash
         env:
           JAVA_HOME: /usr/lib/jvm/java-11-openjdk-amd64
@@ -788,7 +684,7 @@ jobs:
           mv ./flutter/build/app/outputs/flutter-apk/app-${{ env.reltype }}.apk signed-apk/rustdesk-${{ env.VERSION }}-universal${{ env.suffix }}.apk
 
       - uses: r0adkll/sign-android-release@v1
-        name: Sign app APK
+        name: 📝Sign app APK
         if: env.ANDROID_SIGNING_KEY != null
         id: sign-rustdesk
         with:
@@ -801,14 +697,14 @@ jobs:
           # override default build-tools version (29.0.3) -- optional
           BUILD_TOOLS_VERSION: "30.0.2"
 
-      - name: Upload Artifacts
+      - name: ⬆️Upload Artifacts
         if: env.ANDROID_SIGNING_KEY != null && env.UPLOAD_ARTIFACT == 'true'
         uses: actions/upload-artifact@master
         with:
           name: rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.apk
           path: ${{steps.sign-rustdesk.outputs.signedReleaseFile}}
 
-      - name: Publish signed apk package
+      - name: 🎉Publish signed apk package
         if: env.ANDROID_SIGNING_KEY != null && env.UPLOAD_ARTIFACT == 'true'
         uses: softprops/action-gh-release@v1
         with:
@@ -817,7 +713,7 @@ jobs:
           files: |
             ${{steps.sign-rustdesk.outputs.signedReleaseFile}}
 
-      - name: Publish unsigned apk package
+      - name: 🎉Publish unsigned apk package
         if: env.ANDROID_SIGNING_KEY == null && env.UPLOAD_ARTIFACT == 'true'
         uses: softprops/action-gh-release@v1
         with:
